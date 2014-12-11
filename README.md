@@ -1,6 +1,6 @@
 # gecf
 
-A Clojure library designed to ... well, that part is up to you.
+k-edge-conectedness of graph using push-relabel flow search
 
 ## Usage
 
