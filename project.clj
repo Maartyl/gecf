@@ -1,6 +1,11 @@
 (defproject gecf "0.1.0-SNAPSHOT"
-  :description "computes k-edge-conectedness of a graph computing flow, preflow-relabel"
-  :url "http://example.com/FIXME"
+  :description "computes k-edge-conectedness of a graph computing flow using preflow-relabel"
+  :main gecf.core
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.6.0"]])
+  :dependencies [[org.clojure/clojure "1.6.0"]]
+  :global-vars {*warn-on-reflection* true
+                *assert* false} ; pre and post conditions
+  :jvm-opts ["-Xmx1g"]
+
+  )
