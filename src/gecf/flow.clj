@@ -3,7 +3,7 @@
 
 (defrecord Gdata [height excess])
 
-(def empty-gdata (Gdata. 0 0))
+;(def empty-gdata (Gdata. 0 0))
 
 (defn- push-relabel-init [g start end]
   (let [stack (succs g start) ;; stack to use to identify nodes with excess, instead of searching
@@ -27,29 +27,73 @@
 
 
 (defn- height [gm n] (get-in gm [n :height] 0)) ;; or 0
-(defn- height-inc
-  ([gm n] (update-in gm [n :height] inc)) ;;for starters: simplest preflow-relabel: just lifts by 1; not to be used after first tests
-  ([gm n c] (update-in gm [n :height] #(+ % c))))
+(defn- height-inc [gm n c] (update-in gm [n :height] #(+ % c)))
+(defn- height-set [gm n c] (assoc-in gm [n :height] c))
 
 (defn- excess [gm n] (get-in gm [n :excess] 0))
 (defn- excess-set [gm n c] (assoc-in gm [n :excess] c))
-(defn- excess-move [gm from to c] (-> gm (excess-set to c) (excess-set from (- c))))
-
-
+(defn- excess-move [gm from to c]
+  ;(prn-str gm " (" from " " to "): " c) ;;DEBUG
+  (-> gm (excess-set to c) (excess-set from (- c))))
 
 
 
 ;if (:e u) > 0 && uRv>0 && (:h u) == (inc (:h v))
 ;; v is under u and I push what what excess I can from u to v
 ;; already assumes it can happen
-(defn- push [gm fm u v] (let [d (min (excess gm u) (flow fm u v))]
-                          [(excess-move gm u v d)
-                           (flow-add fm u v d)]))
-
+;; only adds v to actives: 'a ;; if excess moved
+(defn- push [g gm fm a u v] (let [ruv (- (weight g u v) (flow fm u v)) ;; residual(u,v)
+                                  d (min (excess gm u) ruv)]
+                              (if (and (pos? ruv) (= (height gm u) (inc (height gm v))))
+                                [(excess-move gm u v d)
+                                 (flow-add fm u v d)
+                                 (conj a v)]
+                                [gm fm a])))
 
 
 (defn push-relabel
   [g start end]
+  (let [[active gm fm] (push-relabel-init g start end)]
+    (loop [active active gm gm fm fm] ;; init loop with values from init
+      (if (empty? active) fm ;; no more active nodes: return function of flow (flow-map)
+        (let [cur (first active)
+              as (rest active)]
+          (if (or (= cur end) (= cur start)) (recur (rest active) gm fm) ;; ignore end/start node
+            (let [neighbours (concat (succs g cur) (preds g cur)) ;; nodes around ;;! potential growth
+                  [gm fm active] (reduce (fn [[gm fm a :as acc] n]
+                                           (prn-str n gm fm a)
+                                           (if (zero? (excess gm cur))
+                                             (reduced acc) ;;if excess drops to 0 throughout reduce, no point doing rest
+                                             (push g gm fm a cur n) ;; move excess if possible
+                                             )) [gm fm as] neighbours)]
+              (if (pos? (excess gm cur)) ;; lift? : I tried push to all neighbours : still has excess...
+                (recur (conj active cur) (height-set gm cur (inc (apply min (map #(height gm %) neighbours)))) fm)
+                (recur active gm fm)) ;; active is processed in reduce; made of 'as
+              )))))))
 
 
-  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
