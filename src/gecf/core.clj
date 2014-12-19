@@ -66,7 +66,21 @@ edge representation:
 "
 
 
-(push-relabel (simple-digraph [1 2] [3 4] [2 4] [1 3]) 1 3)
+(push-relabel (simple-digraph [1 2] [3 4] [2 4] [1 3] [3 5] [4 5] [2 6] [5 6]) 1 6)
+
+(def g (simple-digraph [1 2] [3 4] [2 4] [1 3]))
+
+(push-relabel-init g 1 3)
+(let [[a gm fm maxh] (push-relabel-init g 1 3)]
+  (def as a)
+  (def gm gm)
+  (def fm fm)
+  (def maxh maxh))
+maxh
+gm
+(excess-move gm 3 4 5 )
+
+
 
 
 
