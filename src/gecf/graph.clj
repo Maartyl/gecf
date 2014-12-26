@@ -26,7 +26,7 @@
 
 
 
-(defrecord AdjacentGraph [scs prs] ; nds: {node data}, scs{node #{succ succ}}; prs like scs but preds
+(defrecord AdjacentGraph [scs prs] ; scs{node #{succ succ}}; prs like scs but preds
   Graph
   (nodes [g] (keys scs))
   (edges [g] (for [[n1 n2s] scs
@@ -45,7 +45,6 @@
   WeightedGraph
   (weight [g n1 n2] (if (has-edge? g n1 n2) 1 0))
   (weighted-edges [g] (map (fn [[n1 n2]] [n1 n2 (weight g n1 n2)]) (edges g)))
-
   )
 
 
