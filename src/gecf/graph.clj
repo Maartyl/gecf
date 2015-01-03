@@ -51,16 +51,15 @@
 (defn simple-digraph
   "given elems are assumed to by nodes, only vectors to be edges
   an edge can introduce a node
-    (simple-digraph 4 5 6 [2 5])
+    (simple-digraph 4 5 6 [2 5] [5 6] [6 4] 8)
   "
-
   [& elems] (let [or-empty-set (fnil identity #{})
                   [scs prs] (reduce (fn [[scs prs] e] ;;add each element (either vector: both, both directions) or just assure it's present
                                       (if (vector? e)
                                         (let [[n1 n2] e
                                               sv (-> n1 (scs #{}) (conj n2))  ;;get existing or empty; then add and push back
                                               pv (-> n2 (prs #{}) (conj n1))]
-                                          [(assoc scs n1 sv n2 (scs n2 #{}))
+                                          [(assoc scs n1 sv n2 (scs n2 #{}))  ;; assure existence
                                            (assoc prs n2 pv n1 (prs n1 #{}))])
                                         (mapv #(update-in %1 [e] or-empty-set) [scs prs]) ; either the same, or add default: #{}
                                         )) [{} {}] elems)]

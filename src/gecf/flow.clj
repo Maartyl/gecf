@@ -47,6 +47,7 @@
 (defn- excess-move [gm from to c] (-> gm (excess-add to c) (excess-add from (- c))))
 
 (defn- residual [g fm u v] (- (weight g u v) (flow fm u v)))
+(defn- residual-pos? [g fm u v] (pos? (residual g fm u v)))
 
 
 ;if (:e u) > 0 && uRv>0 && (:h u) == (inc (:h v))
@@ -69,13 +70,18 @@
 
 (defn- relabel [g gm fm maxh cur neighbours]
   (let [curh (height gm cur)]
-    (->> neighbours (filter #(pos? (residual g fm cur %))) (map #(height gm %)) (filter #(>= % curh)) (reduce min maxh) inc (height-set gm cur))))
+    (->> neighbours (filter #(residual-pos? g fm cur %)) (map #(height gm %)) (filter #(>= % curh)) (reduce min maxh) inc (height-set gm cur))))
 
 ;;(defn neighbours [g n] (concat (succs g n) (preds g n)))
 (defn- neighbours [g n] (mapcat #(% g n) [succs preds]))
 
-(defn- transferable [g fm gm cur neighbours]
-  (filter #(and (pos? (residual g fm cur %1)) (= (height gm cur) (inc (height gm %1)))) neighbours))
+(defn- can-push? "from 'u to 'v ?" [g fm gm u v]
+  (and (residual-pos? g fm u v) (= (height gm u) (inc (height gm v)))))
+
+(defn- try-push "can-push? ? push : dflt arg" [g start end gm fm a u v dflt]
+  (if (can-push? g fm gm u v) (push g start end gm fm a u v) dflt))
+
+(defn- transferable [g fm gm cur neighbours] (filter #(can-push? g fm gm cur %) neighbours))
 
 (def STOPval (atom 100)) ;; stop infinite loops... (canceling execution doesn't work for this in LightTable, for some reason)
 (defn- STOP [] (prn :stop @STOPval ) (neg? (swap! STOPval dec)) )
@@ -92,39 +98,26 @@
                 curh (height gm cur)]
             (prn :loop cur (gm cur) '% (seq active) gm fm)
             (if (< maxh curh) (recur as gm fm) ;; ignore too-high nodes
-              (let [nghs (neighbours g cur)    ;; nodes around ;;! potential growth :: realized
-                    ts (transferable g fm gm cur nghs)
-                    _ (prn :ts ts)
-                    gm (if (empty? ts) (relabel g gm fm maxh cur nghs) gm)        ;; lift if nothing can be applied
-                    ts (if (empty? ts) (transferable g fm gm cur nghs) ts)        ;; recompute transferable if relabeled ::lazy
-                    _ (prn :ts ts)
+              (let [;nghs (neighbours g cur)    ;; nodes around ;;! potential growth :: realized
+;;                     ts (transferable g fm gm cur nghs)
+;;                     _ (prn :ts ts)
+;;                     gm (if (empty? ts) (relabel g gm fm maxh cur nghs) gm)        ;; lift if nothing can be applied
+;;                     ts (if (empty? ts) (transferable g fm gm cur nghs) ts)        ;; recompute transferable if relabeled ::lazy
+;;                     _ (prn :ts ts)
                     [gm fm active] (reduce (fn [[gm fm a :as acc] n]
                                              (if (pos? (excess gm cur))
-                                               (push g start end  gm fm a  cur n) ;; move excess if possible
-                                               (reduced acc))) [gm fm as] ts)]    ;; nothing left to push
+                                               (try-push g start end  gm fm a  cur n  acc)      ;; move excess if possible
+                                               (reduced acc))) [gm fm as] (neighbours g cur) )] ;; nothing left to push
                 (if (pos? (excess gm cur))  ;; lift? : I tried push to all neighbours : still has excess...
-                  (recur (conj active cur) (relabel g gm fm maxh cur nghs) fm)    ;; try again in next pass
-                  (recur active gm fm))))))))))                                   ;; active is processed in reduce; made of 'as
+                  (recur (conj active cur) (relabel g gm fm maxh cur (neighbours g cur) ) fm)   ;; try again in next pass
+                  (recur active gm fm))))))))))                                                 ;; active is processed in reduce; made of 'as
 
 
 
 
-(defn flow-size "Computes the |f| of a flow f." [g fm start]
-  (+ (apply + (map #(fm [start %]) (succs g start)))
-     #_(apply + (map #(fm [% start] 0) (preds g start))))) ;; edge may not be present: not important: 0
-
-
-
-
-
-;;;DEBUG:
-;; (defn- relabel [g gm fm maxh cur neighbours]
-;;   (let [curh (height gm cur)
-;;         _ (prn :relabel curh (zipmap neighbours (map (fn [%] [(residual g fm cur %) 'r:h (height gm %)]) neighbours)) )
-;;         res (->> neighbours (filter #(pos? (residual g fm cur %))) (map #(height gm %)) (filter #(>= % curh)) (reduce min maxh) inc (height-set gm cur))
-;;         _ (prn :res res)
-;;         ]
-;;     res))
+(defn flow-size "Computes the |f| of a flow f." [g fm end]
+  (+ #_(apply + (map #(fm [end %] 0) (succs g end))) ;; nothing leaves the sink
+     (apply + (map #(fm [% end] 0) (preds g end))))) ;; edge may not be present: not important: 0
 
 
 

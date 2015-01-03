@@ -7,8 +7,11 @@
   (let [[end & nds] (nodes g)]
       (map (fn [start]
               (let [f (push-relabel g start end)]
-                (prn :f g [start end] f)
-                [(flow-size g f start) [start end] f])) nds)))
+                (prn :f [start end] g f)
+                [(flow-size g f end) [start end] f])) nds)))
 
 (defn min-max-flow [g]
   (apply min-key first (max-flows g)))
+
+
+;; def: min-cut
