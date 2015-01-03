@@ -42,12 +42,11 @@
 (defn- residual [g fm u v] (- (weight g u v) (flow fm u v)))
 (defn- residual-pos? [g fm u v] (pos? (residual g fm u v)))
 
-(defn- activate "adds v to a if appropriate" [start end old-gm a v] ;; if it had excess: already present in queue
+(defn- activate "adds v to 'a if appropriate" [start end old-gm a v] ;; if it had excess: already present in queue
   (if (and (not= v start) (not= v end) (zero? (excess old-gm v))) (conj a v) a))
 
-;if (:e u) > 0 && uRv>0 && (:h u) == (inc (:h v))
-;; v is under u and I push what what excess I can from u to v
-;; already assumes it can happen
+;; u -> v
+;; already assumes it can happen :: (:e u) > 0 && uRv>0 && (:h u) == (inc (:h v))
 ;; adds to queue if becomes active ;; 'a
 (defn- push [g start end fm gm a u v]
   (let [ruv (residual g fm u v)
@@ -58,11 +57,10 @@
      (activate start end gm a v)]))
 
 (defn- relabel [g gm fm maxh cur neighbours]
-  (let [curh (height gm cur)]
+  (let [curh (height gm cur)] ;; if edge not filled, get min of bigger heights |> inc |> set
     (->> neighbours (filter #(residual-pos? g fm cur %)) (map #(height gm %)) (filter #(>= % curh)) (reduce min maxh) inc (height-set gm cur))))
 
-;;(defn neighbours [g n] (concat (succs g n) (preds g n)))
-(defn- neighbours [g n] (mapcat #(% g n) [succs preds]))
+(defn neighbours [g n] (concat (succs g n) (preds g n)))
 
 (defn- can-push? "from 'u to 'v ?" [g fm gm u v]
   (and (residual-pos? g fm u v) (= (height gm u) (inc (height gm v)))))
@@ -72,36 +70,28 @@
 
 ;(defn- transferable [g fm gm cur neighbours] (filter #(can-push? g fm gm cur %) neighbours))
 
-(def STOPval (atom 100)) ;; stop infinite loops... (canceling execution doesn't work for this in LightTable, for some reason)
-(defn- STOP [] (prn :stop @STOPval ) (neg? (swap! STOPval dec)) )
+;;(def STOPval (atom 100)) ;; stop infinite loops... (canceling execution doesn't work for this in LightTable, for some reason)
+;;(defn- STOP [] (prn :stop @STOPval ) (neg? (swap! STOPval dec)) )
 
 (defn push-relabel "Computes the maximal flow in graph 'g."
   [g start end]
   (let [[active gm fm maxh] (push-relabel-init g start end)]
-    (reset! STOPval (* 2 maxh maxh))                                   ;;DEBUG; can't be more then ~2V^2
-    (loop [active active gm gm fm fm]                                  ;; init loop with values from init
-      (if (STOP) [:INFINITE maxh :a (seq active) :gm gm :fm fm]
-        (if (empty? active) [(excess gm end) fm] ;; no more active nodes: return function of flow (flow-map) and size of flow (excess in 't)
-          (let [cur (peek active)
-                as (pop active)                  ;;actives, that are not 'cur : used to compute* the rest (*adds to 'as)
-                curh (height gm cur)]
-            (prn :loop cur (gm cur) '% (seq active) gm fm)
-            (if (< maxh curh) (recur as gm fm) ;; ignore too-high nodes
-              (let [[gm fm active] (reduce (fn [[gm fm a :as acc] n]
-                                             (if (pos? (excess gm cur))
-                                               (try-push g start end  fm gm a  cur n  acc)      ;; move excess if possible
-                                               (reduced acc))) [gm fm as] (neighbours g cur))] ;; nothing left to push
-                (if (pos? (excess gm cur))  ;; lift? : I tried push to all neighbours : still has excess...
-                  (recur (conj active cur) (relabel g gm fm maxh cur (neighbours g cur) ) fm)   ;; try again in next pass
-                  (recur active gm fm))))))))))                                                 ;; active is processed in reduce; made of 'as
-
-
-
-
-(defn flow-size "Computes the |f| of a flow f." [g fm end]
-  (+ #_(apply + (map #(fm [end %] 0) (succs g end))) ;; nothing leaves the sink
-     (apply + (map #(fm [% end] 0) (preds g end))))) ;; edge may not be present: not important: 0
-
+;;     (reset! STOPval (* 2 maxh maxh))        ;; DEBUG; can't be more then ~2V^2
+    (loop [active active gm gm fm fm]          ;; init loop with values from init
+;;       (if (STOP) [:INFINITE maxh :a (seq active) :gm gm :fm fm])
+      (if (empty? active) [(excess gm end) fm] ;; no more active nodes: return function of flow (flow-map) and size of flow (excess in 't)
+        (let [cur (peek active)
+              as (pop active)                  ;;actives, that are not 'cur : used to compute* the rest (*adds to 'as)
+              curh (height gm cur)]
+          (prn :loop cur (gm cur) '% (seq active) gm fm)
+          (if (< maxh curh) (recur as gm fm) ;; ignore too-high nodes
+            (let [[gm fm active] (reduce (fn [[gm fm a :as acc] n]
+                                           (if (pos? (excess gm cur))
+                                             (try-push g start end  fm gm a  cur n  acc)      ;; move excess if possible
+                                             (reduced acc))) [gm fm as] (neighbours g cur))]  ;; nothing left to push
+              (if (pos? (excess gm cur))  ;; lift? : I tried push to all neighbours : still has excess...
+                (recur (conj active cur) (relabel g gm fm maxh cur (neighbours g cur)) fm)   ;; try again in next pass
+                (recur active gm fm)))))))))                                                  ;; active is processed in reduce; made of 'as
 
 
 
