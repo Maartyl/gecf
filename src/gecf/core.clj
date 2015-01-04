@@ -88,6 +88,7 @@ edge representation:
   --version                   show version of Gecf
 
 What can be used as vertex identifier? - any edn structure/value. (You might prefer values that are fast to hash and compare.)
+Stdin is assumed to be in edn format.
 "))
 
 (defn args-dispatch [args]
