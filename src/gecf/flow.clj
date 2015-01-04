@@ -56,11 +56,13 @@
      (flow-add fm u v d)
      (activate start end gm a v)]))
 
-(defn- relabel [g gm fm maxh cur neighbours]
-  (let [curh (height gm cur)] ;; if edge not filled, get min of bigger heights |> inc |> set
-    (->> neighbours (filter #(residual-pos? g fm cur %)) (map #(height gm %)) (filter #(>= % curh)) (reduce min maxh) inc (height-set gm cur))))
-
 (defn neighbours [g n] (concat (succs g n) (preds g n)))
+
+(defn- relabel [g gm fm maxh cur] ;; if edge not filled, get min of bigger heights (or maxh) |> inc |> set
+  (let [nonsaturated? (partial residual-pos? g fm cur)
+        h (partial height gm)
+        gteq? (partial <= (height gm cur))]
+    (->> (neighbours g cur) (filter nonsaturated?) (map h) (filter gteq?) (reduce min maxh) inc (height-set gm cur))))
 
 (defn- can-push? "from 'u to 'v ?" [g fm gm u v]
   (and (residual-pos? g fm u v) (= (height gm u) (inc (height gm v)))))
@@ -90,7 +92,7 @@
                                              (try-push g start end  fm gm a  cur n  acc)      ;; move excess if possible
                                              (reduced acc))) [gm fm as] (neighbours g cur))]  ;; nothing left to push
               (if (pos? (excess gm cur))  ;; lift? : I tried push to all neighbours : still has excess...
-                (recur (conj active cur) (relabel g gm fm maxh cur (neighbours g cur)) fm)   ;; try again in next pass
+                (recur (conj active cur) (relabel g gm fm maxh cur) fm)   ;; try again in next pass
                 (recur active gm fm)))))))))                                                  ;; active is processed in reduce; made of 'as
 
 
