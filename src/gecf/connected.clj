@@ -2,12 +2,11 @@
   (:use gecf.graph)
   (:use gecf.flow))
 
-
 (defn max-flows [g]
   (let [[end & nds] (nodes g)]
-      (pmap (fn [start]
-              (let [[fs f] (push-relabel g start end)]
-                [fs [start end] f])) nds)))
+    (pmap (fn [start]
+           (let [[fs f] (push-relabel g start end)]
+             [fs [start end] f])) nds)))
 
 (defn max-flows-all [g]
   (for [start (nodes g)
@@ -15,8 +14,10 @@
     (let [[fs f] (push-relabel g start end)]
       [fs [start end] f])))
 
-(defn min-max-flow [g]
-  (apply min-key first (or (max-flows g) [[0 :empty]])))
+(defn min-max-flow "graph 'g -> [flow-size [start end] flow-map]" [g]
+  (apply min-key first (#(if (empty? %) [[-1 :empty]] %) (max-flows g))))
+
+
 
 
 ;; def: min-cut

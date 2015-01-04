@@ -47,7 +47,7 @@
   (weighted-edges [g] (map (fn [[n1 n2]] [n1 n2 (weight g n1 n2)]) (edges g)))
   CountedGraph
   (count-nodes [g] (count scs))
-  (count-edges [g] (count (edges g))) ;; slow
+  (count-edges [g] (count (edges g))) ;; slow, unused
   )
 
 (defrecord BiAdjacentGraph [scs] ; scs{node #{succ succ}} each edge exists both ways
@@ -69,7 +69,7 @@
   (weighted-edges [g] (map (fn [[n1 n2]] [n1 n2 (weight g n1 n2)]) (edges g)))
   CountedGraph
   (count-nodes [g] (count scs))
-  (count-edges [g] (count (edges g))) ;; slow
+  (count-edges [g] (count (edges g))) ;; slow, unused
   )
 
 
