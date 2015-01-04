@@ -6,7 +6,8 @@
 (defn- push-relabel-init [g start end]
   (let [active (succs g start) ;; stack to use to identify nodes with excess, instead of searching
         node-count (count-nodes g)
-        ivs (map #(vector %1 (gdata 0 (- (weight g start %1)))) (preds g start))
+        ;; saturate residual edges around start :excess
+        ivs (map #(vector %1 (gdata 0 (- (weight g start %1)))) (preds g start)) ;; unsure whether I need this...
         ;; {node gdata}, init excess with capacity: weight of first successors
         ivs (concat ivs (map #(vector %1 (gdata 0 (weight g start %1))) active))
         gm (into {} ivs) ;; create map of seq<[n gd]>; Gdata Map

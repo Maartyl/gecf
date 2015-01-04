@@ -1,6 +1,8 @@
-# gecf
+# Gecf
 
-k-edge-conectedness of graph using push-relabel flow search
+k-edge-conectedness of graph using push-relabel flow search (N-1 times)
+
+gecf: Graph k-Edge Conectedness using Flows
 
 ## Usage
 
@@ -17,5 +19,4 @@ build using Leiningen. ($ lein deps && lein run)
 
 Copyright © 2014 Martin Chmelík
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License either version 1.0.

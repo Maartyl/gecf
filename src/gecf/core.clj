@@ -72,8 +72,12 @@ edge representation:
   --directed       -d         consider input to be a directed graph
 
   --pairs          -p         input consists of nodes grouped to pairs: edges
-                              like: [1 2] [2 3] [3 1]
-  --simple         -s         input is flat, pairs are considered to be edges (default)
+                              // this allows defining vertices without any edges
+                              // vertices must not be edn vectors
+                              like: [1 2] [2 3] [3 1]         -> 2
+                              like: 1 2 3 4 [1 2] [2 3] [3 1] -> 0
+
+  --simple         -s         input is flat, 2 consecutive vertices are considered to be an edge (default)
                               like: 1 2 2 3 3 1
 
   --full N         -f         use a full graph of N vertices (for testing etc.)
@@ -81,7 +85,7 @@ edge representation:
                               a random subset of edges (for testing etc.)
 
   --help           -h         show this help
-  --version
+  --version                   show version of Gecf
 
 What can be used as vertex identifier? - any edn structure/value. (You might prefer values that are fast to hash and compare.)
 "))
