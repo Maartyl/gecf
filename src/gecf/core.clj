@@ -7,7 +7,7 @@
   (:require [clojure.edn :as edn])
   (:gen-class))
 
-(def __gecf-version__ "0.0.1")
+(def __gecf-version__ "0.1.0") ;; not sure how to sync with project version
 
 #_ "
 basic code structure:
@@ -67,6 +67,9 @@ edge representation:
 (defn full-graph [size]
   (apply simple-bigraph (for [x (range size) y (range size) :when (< x y)] [x y])))
 
+(defn rand-graph [size]
+  (apply simple-bigraph (for [x (range size) y (range size) :when (< x y) :when (> 0.4 (rand))] [x y])))
+
 
 (defn read-all
   ([] (read-all *in*))
@@ -75,8 +78,8 @@ edge representation:
      (take-while #(not= % eof) (repeatedly #(read input false eof))))))
 
 
-(defn read-pairs [] (read-all *in*))
-(defn read-simple [] (map vec (partition 2 (read-all *in*))))
+(defn read-pairs [] (read-all))
+(defn read-simple [] (map vec (partition 2 (read-all))))
 
 
 (defn compute-print [print-cut? g]
@@ -98,7 +101,8 @@ edge representation:
                                  "implicit" :implicit
 
                                  "cut" :cut  ;;unsupported ;; compute also minimal cut?
-                                 "full" :full ;; full graph: for testing etc.
+                                 "full" :full ;; full, random graph: for testing etc.
+                                 "random" :random ;; full, random: takes num of vertices as argument
                                  "help" :help
                                  "version" :version
                                  }
@@ -110,9 +114,10 @@ edge representation:
                                 \i "implicit"
                                 \c "cut"
                                 \f "full"
+                                \r "random"
                                 \h "help"
                                 }
-                        :has-data #{:full}
+                        :has-data #{:full :random}
                         } args)
         opt #(get-in ac [:opts %])
 
@@ -130,6 +135,7 @@ edge representation:
      (opt :version) (prn 'Gecf __gecf-version__)
      (opt :help) (prn "-b -d, -p -s ... some help")
      (opt :full) (->> (read-string (opt :full)) full-graph (compute-print print-cut?))
+     (opt :random) (->> (read-string (opt :random)) rand-graph (compute-print print-cut?))
      :else (->> (graph-reader) (apply graph-builder) (compute-print print-cut?))
      )))
 
