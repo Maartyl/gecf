@@ -1,11 +1,11 @@
 (ns gecf.flow
   (:use gecf.graph))
 
-(defn- gdata [h e] {:height h :excess e})
+(defn- gdata [h e] {:height h :excess e}) ;; Goldberg data
 
 (defn- push-relabel-init [g start end]
   (let [active (succs g start) ;; stack to use to identify nodes with excess, instead of searching
-        node-count (count (nodes g))
+        node-count (count-nodes g)
         ivs (map #(vector %1 (gdata 0 (- (weight g start %1)))) (preds g start))
         ;; {node gdata}, init excess with capacity: weight of first successors
         ivs (concat ivs (map #(vector %1 (gdata 0 (weight g start %1))) active))
@@ -25,7 +25,7 @@
     ; queue of active nodes; goldberg data map; flow function map; maximal height
     [qa gm fm maxh]))
 
-;;fg represents map of flows: {[n1 n2] flow}
+;;fm represents map of flows: {[n1 n2] flow}
 (defn- flow     [fm n1 n2] (fm [n1 n2] 0)) ;; if not present: is 0 :: I may never ask for invalid edge
 (defn- flow-add [fm n1 n2 c] (update-in ;;symetric
                               (update-in fm [[n1 n2]] #(+ (or % 0) c))
@@ -39,7 +39,7 @@
 (defn- excess-add [gm n c] (update-in gm [n :excess] #(+ (or % 0) c)))
 (defn- excess-move [gm from to c] (-> gm (excess-add to c) (excess-add from (- c))))
 
-(defn- residual [g fm u v] (- (weight g u v) (flow fm u v)))
+(defn residual [g fm u v] (- (weight g u v) (flow fm u v)))
 (defn- residual-pos? [g fm u v] (pos? (residual g fm u v)))
 
 (defn- activate "adds v to 'a if appropriate" [start end old-gm a v] ;; if it had excess: already present in queue
@@ -51,7 +51,7 @@
 (defn- push [g start end fm gm a u v]
   (let [ruv (residual g fm u v)
         d (min (excess gm u) ruv)]
-    (prn :push [u v] '% :e<u> (excess gm u) :res ruv '% :d d :h (height gm u) (inc (height gm v)) '% (seq a) gm fm)
+    ;(prn :push [u v] '% :e<u> (excess gm u) :res ruv '% :d d :h (height gm u) (inc (height gm v)) '% (seq a) gm fm)
     [(excess-move gm u v d)
      (flow-add fm u v d)
      (activate start end gm a v)]))
@@ -83,7 +83,7 @@
         (let [cur (peek active)
               as (pop active)                  ;;actives, that are not 'cur : used to compute* the rest (*adds to 'as)
               curh (height gm cur)]
-          (prn :loop cur (gm cur) '% (seq active) gm fm)
+          ;(prn :loop cur (gm cur) '% (seq active) gm fm)
           (if (< maxh curh) (recur as gm fm) ;; ignore too-high nodes
             (let [[gm fm active] (reduce (fn [[gm fm a :as acc] n]
                                            (if (pos? (excess gm cur))
