@@ -93,7 +93,7 @@
                                              (try-push g start end  fm gm a  cur n  acc)      ;; move excess if possible
                                              (reduced acc))) [gm fm as] (neighbours g cur))]  ;; nothing left to push
               (if (pos? (excess gm cur))  ;; lift? : I tried push to all neighbours : still has excess...
-                (recur (conj active cur) (relabel g gm fm maxh cur) fm)   ;; try again in next pass
+                (recur (conj active cur) (relabel g gm fm maxh cur) fm)                       ;; try again in next pass
                 (recur active gm fm)))))))))                                                  ;; active is processed in reduce; made of 'as
 
 

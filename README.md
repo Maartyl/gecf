@@ -20,6 +20,6 @@ build using Leiningen. ($ lein deps && lein run)
 
 ## License
 
-Copyright © 2014 Martin Chmelík
+Copyright © 2014, 2015 Martin Chmelík
 
-Distributed under the Eclipse Public License either version 1.0.
+Distributed under the Eclipse Public License version 1.0.
