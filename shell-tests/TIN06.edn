@@ -1,0 +1,21 @@
+-sd
+
+:a :b
+:b :c
+:c :a
+
+'a 'b
+'b 'c
+'c 'a
+
+:c 'b
+'b :a
+
+:b 'a
+'a :c
+
+:a 'c
+'c :b
+
+; shadow double triangle; "2 in 2 out"
+; => 2
