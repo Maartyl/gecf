@@ -89,7 +89,7 @@ edge representation:
     (-> g min-max-flow first prn)))
 
 (defn prn-help []
-  (println "Gecf : compute k-edge conectedness of given graph
+  (println "Gecf : compute k-edge-conectedness of given graph
 
   --bidirectional  -b         consider input to be an undirected graph (default)
   --directed       -d         consider input to be a directed graph
