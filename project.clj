@@ -1,6 +1,7 @@
-(defproject gecf "0.1.0-SNAPSHOT"
+(defproject gecf "0.1.0"
   :description "computes k-edge-conectedness of a graph computing flow using preflow-relabel"
   :main gecf.core
+  :aot :all
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]]
