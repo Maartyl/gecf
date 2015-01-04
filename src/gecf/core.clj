@@ -3,7 +3,7 @@
   (:use gecf.flow)
   (:use gecf.connected)
   (:use clojure.pprint)
-  (:require [maa.getopts :as opts] )
+  (:require [maa.getopts :as opts])
   (:require [clojure.edn :as edn])
   (:gen-class))
 
@@ -74,8 +74,9 @@ edge representation:
 (defn read-all
   ([] (read-all *in*))
   ([input]
-   (let [eof (Object.)] ;; possibly change to edn for safety... (but future? implicit graphs are unsafe anyway); different eof semantics
-     (take-while #(not= % eof) (repeatedly #(read input false eof))))))
+   (binding [*read-eval* false]
+     (let [eof (Object.)]
+       (take-while #(not= % eof) (repeatedly #(edn/read {:eof eof} input)))))))
 
 
 (defn read-pairs [] (read-all))
@@ -88,6 +89,25 @@ edge representation:
     (-> g min-max-flow first prn)))
 
 (defn prn-help []
+  (println "Gecf : compute k-edge conectedness of given graph
+
+  --bidirectional  -b         consider input to be an undirected graph (default)
+  --directed       -d         consider input to be a directed graph
+
+  --pairs          -p         input consists of nodes grouped to pairs: edges
+                              like: [1 2] [2 3] [3 1]
+  --simple         -s         input is flat, pairs are considered to be edges (default)
+                              like: 1 2 2 3 3 1
+
+  --full N         -f         use a full graph of N vertices (for testing etc.)
+  --random N       -r         use an undirected graph of N vertices with
+                              a random subset of edges (for testing etc.)
+
+  --help           -h         show this help
+  --version
+
+What can be used as vertex identifier? - any edn structure/value. (You might prefer values that are fast to hash and compare.)
+")
   )
 
 (defn args-dispatch [args]
@@ -123,17 +143,17 @@ edge representation:
 
         graph-builder simple-bigraph
         graph-builder (if (opt :digraph) simple-digraph graph-builder)
-        graph-builder (if (opt :undig) simple-bigraph graph-builder)
+        graph-builder (if (opt :undig) simple-bigraph graph-builder)   ;;prefered if both specified
 
         graph-reader read-simple
         graph-reader (if (opt :paired) read-pairs graph-reader)
-        graph-reader (if (opt :simple) read-simple graph-reader)
+        graph-reader (if (opt :simple) read-simple graph-reader)       ;;prefered if both specified
 
         print-cut? (get-in ac [:opts :cut])
         ]
     (cond
-     (opt :version) (prn 'Gecf __gecf-version__)
-     (opt :help) (prn "-b -d, -p -s ... some help")
+     (opt :version) (println __gecf-version__)
+     (opt :help) (prn-help)
      (opt :full) (->> (read-string (opt :full)) full-graph (compute-print print-cut?))
      (opt :random) (->> (read-string (opt :random)) rand-graph (compute-print print-cut?))
      :else (->> (graph-reader) (apply graph-builder) (compute-print print-cut?))
@@ -143,10 +163,6 @@ edge representation:
   (args-dispatch args)
 
   (shutdown-agents)) ;;kill thread-pool
-
-
-
-
 
 ;(apply -main *command-line-args*)
 
