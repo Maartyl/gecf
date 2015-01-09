@@ -60,32 +60,43 @@ edge representation:
 (defn read-simple [] (map vec (partition 2 (read-all))))
 
 
+(defn- flow-remove-0 [fm] (apply dissoc fm (for [[k v] fm :when (= v 0)] k))) ;;remove edges without any flow
+
 (defn compute-print [print-cut? g]
-  (if print-cut?
-    (println "Can't compute minimal cut yet.")
-    (-> g min-max-flow first println)))
+  (let [[size [start end] f] (min-max-flow g)]
+    (if print-cut?
+      (let [cut (min-cut g f start)]
+        (case print-cut?
+          :cut-all (prn {:size size :cut cut :start start :end end :flow (flow-remove-0 f)})
+          :cut-edn (prn {:size size :cut cut})
+          (do (println size) (prn cut))))
+      (println size))))
 
 (defn prn-help []
   (println "Gecf : compute k-edge-conectedness of given graph
 
-  --bidirectional  -b         consider input to be an undirected graph (default)
-  --directed       -d         consider input to be a directed graph
+  --bidirectional  -b    consider input to be an undirected graph (default)
+  --directed       -d    consider input to be a directed graph
 
-  --pairs          -p         input consists of nodes grouped to pairs: edges
-                              // this allows defining vertices without any edges
-                              // vertices must not be edn vectors
-                              like: [1 2] [2 3] [3 1]         -> 2
-                              like: 1 2 3 4 [1 2] [2 3] [3 1] -> 0
+  --pairs          -p    input consists of nodes grouped to pairs: edges
+                         // this allows defining vertices without any edges
+                         // vertices must not be edn vectors
+                         like: [1 2] [2 3] [3 1]         -> 2
+                         like: 1 2 3 4 [1 2] [2 3] [3 1] -> 0
 
-  --simple         -s         input is flat, 2 consecutive vertices are considered to be an edge (default)
-                              like: 1 2 2 3 3 1
+  --simple         -s    input is flat, 2 consecutive vertices are considered to be an edge (default)
+                         like: 1 2 2 3 3 1
 
-  --full N         -f         use a full graph of N vertices (for testing etc.)
-  --random N       -r         use an undirected graph of N vertices with
-                              a random subset of edges (for testing etc.)
+  --cut            -c    print minimal cut after it's size ;-> 2 ([1 2] [1 3])
+  --cut-edn        -C    print minimal cut and size in edn map ;-> {:size 2 :cut ([1 2] [1 3])}
+  --all            -A    print all in edn format ;-> {:size 2 :cut ([1 2] [1 3]) :start 1 :end 3 :flow ... }
 
-  --help           -h         show this help
-  --version                   show version of Gecf
+  --full N         -f    use a full graph of N vertices (for testing etc.)
+  --random N       -r    use an undirected graph of N vertices with
+                         a random subset of edges (for testing etc.)
+
+  --help           -h    show this help
+  --version              show version of Gecf
 
 What can be used as vertex identifier? - any edn structure/value. (You might prefer values that are fast to hash and compare.)
 Stdin is assumed to be in edn format.
@@ -101,7 +112,10 @@ Stdin is assumed to be in edn format.
                                  ;"weighted" :weighted  ;; makes little sense here, but interesting [n1 n2 w]
                                  "implicit" :implicit
 
-                                 "cut" :cut  ;;unsupported ;; compute also minimal cut?
+                                 "cut" :cut  ;; compute also minimal cut?
+                                 "cut-edn" :cut-edn
+                                 "all" :cut-all
+
                                  "full" :full ;; full, random graph: for testing etc.
                                  "random" :random ;; full, random: takes num of vertices as argument
                                  "help" :help
@@ -114,6 +128,8 @@ Stdin is assumed to be in edn format.
                                 \w "weighted"
                                 \i "implicit"
                                 \c "cut"
+                                \C "cut-edn"
+                                \A "all"
                                 \f "full"
                                 \r "random"
                                 \h "help"
@@ -130,7 +146,9 @@ Stdin is assumed to be in edn format.
         graph-reader (if (opt :paired) read-pairs graph-reader)
         graph-reader (if (opt :simple) read-simple graph-reader)       ;;prefered if both specified
 
-        print-cut? (get-in ac [:opts :cut])
+        print-cut? (opt :cut)
+        print-cut? (if (opt :cut-edn) :edn print-cut?)
+        print-cut? (if (opt :cut-all) :all print-cut?)
         ]
     (cond
      (opt :version) (println (get-version))
