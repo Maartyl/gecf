@@ -15,7 +15,7 @@
       [fs [start end] f])))
 
 (defn min-max-flow "graph 'g -> [flow-size [start end] flow-map]" [g]
-  (apply min-key first (#(if (empty? %) [[-1 :empty]] %) (max-flows g))))
+  (apply min-key first (#(if (empty? %) [[-1 [] :empty]] %) (max-flows g))))
 
 
 #_"  min cut

@@ -3,6 +3,8 @@
   (:use gecf.flow)
   (:use gecf.connected)
 
+  (:use clojure.pprint)
+
   (:require [maa.getopts :as opts])
   (:require [clojure.edn :as edn])
 
@@ -61,15 +63,18 @@ edge representation:
 
 
 (defn- flow-remove-0 [fm] (apply dissoc fm (for [[k v] fm :when (= v 0)] k))) ;;remove edges without any flow
+(defn- flow-only-pos [fm] (apply dissoc fm (for [[k v] fm :when (<= v 0)] k))) ;;remove edges without any flow
 
 (defn compute-print [print-cut? g]
   (let [[size [start end] f] (min-max-flow g)]
+    (if (neg? size) ;;empty graph
+      (println size))
     (if print-cut?
       (let [cut (min-cut g f start)]
         (case print-cut?
-          :cut-all (prn {:size size :cut cut :start start :end end :flow (flow-remove-0 f)})
-          :cut-edn (prn {:size size :cut cut})
-          (do (println size) (prn cut))))
+          :cut-all (pprint {:size size :cut cut :start start :end end :flow (flow-only-pos f)})
+          :cut-edn (pprint {:size size :cut cut})
+          (do (println size) (pprint cut))))
       (println size))))
 
 (defn prn-help []
@@ -100,6 +105,8 @@ edge representation:
 
 What can be used as vertex identifier? - any edn structure/value. (You might prefer values that are fast to hash and compare.)
 Stdin is assumed to be in edn format.
+
+Return value -1 means the given graph was empty.
 "))
 
 (defn args-dispatch [args]
