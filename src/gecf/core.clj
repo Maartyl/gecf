@@ -43,11 +43,21 @@ edge representation:
  - [n1 n2 weight] <- {[n1 n2] weight}
 "
 
-(defn full-graph [size]
-  (apply simple-bigraph (for [x (range size) y (range size) :when (< x y)] [x y])))
 
-(defn rand-graph [size]
-  (apply simple-bigraph (for [x (range size) y (range size) :when (< x y) :when (> 0.4 (rand))] [x y])))
+(defn rand-graph
+  "graph with random subset of edges : depends on density(0-1)
+   - if size is collection instead: uses elements as nodes of graph"
+  ([size density] ;; density:
+   (apply simple-bigraph
+          (let [nds (cond
+                     (coll? size)   size
+                     (number? size) (range size)
+                     (symbol? size) (seq (str size))
+                     :else          (seq size))]
+            (for [x nds y nds :when (not= x y) :when (>= density (rand))] [x y]))))
+  ([size] (rand-graph size 0.6)))
+
+(defn full-graph [size] (rand-graph size 1))
 
 
 (defn read-all
@@ -63,19 +73,19 @@ edge representation:
 
 
 (defn- flow-remove-0 [fm] (apply dissoc fm (for [[k v] fm :when (= v 0)] k))) ;;remove edges without any flow
-(defn- flow-only-pos [fm] (apply dissoc fm (for [[k v] fm :when (<= v 0)] k))) ;;remove edges without any flow
+(defn- flow-only-pos [fm] (apply dissoc fm (for [[k v] fm :when (<= v 0)] k))) ;;only positive flow
 
 (defn compute-print [print-cut? g]
   (let [[size [start end] f] (min-max-flow g)]
     (if (neg? size) ;;empty graph
-      (println size))
-    (if print-cut?
-      (let [cut (min-cut g f start)]
-        (case print-cut?
-          :cut-all (pprint {:size size :cut cut :start start :end end :flow (flow-only-pos f)})
-          :cut-edn (pprint {:size size :cut cut})
-          (do (println size) (pprint cut))))
-      (println size))))
+      (println size)
+      (if print-cut?
+        (let [cut (min-cut g f start)]
+          (case print-cut?
+            :all (pprint {:size size :cut cut :start start :end end :flow (flow-only-pos f)})
+            :edn (pprint {:size size :cut cut})
+            (do (println size) (pprint cut))))
+        (println size)))))
 
 (defn prn-help []
   (println "Gecf : compute k-edge-conectedness of given graph

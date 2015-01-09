@@ -1,4 +1,4 @@
-(defproject gecf "0.1.1-SNAPSHOT"
+(defproject gecf "0.1.3-SNAPSHOT"
   :description "computes k-edge-conectedness of a graph computing flow using preflow-relabel"
   :main gecf.core
   :aot :all
