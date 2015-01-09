@@ -18,11 +18,7 @@
   (apply min-key first (#(if (empty? %) [[-1 :empty]] %) (max-flows g))))
 
 
-
-
-;; def: min-cut
-
-#_"
+#_"  min cut
 
 DFS: stop on saturated, remeber them (it's cut)
  - nonsaturated: recursively repeat
