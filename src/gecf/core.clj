@@ -63,9 +63,8 @@ edge representation:
 (defn read-all
   ([] (read-all *in*))
   ([input]
-   (binding [*read-eval* false] ;; probably useless with edn...
-     (let [eof (Object.)]
-       (take-while #(not= % eof) (repeatedly #(edn/read {:eof eof} input)))))))
+   (let [eof (Object.)]
+     (take-while #(not= % eof) (repeatedly #(edn/read {:eof eof} input))))))
 
 
 (defn read-pairs [] (read-all))
@@ -136,8 +135,7 @@ Return value -1 means the given graph was empty.
                                  "full" :full ;; full, random graph: for testing etc.
                                  "random" :random ;; full, random: takes num of vertices as argument
                                  "help" :help
-                                 "version" :version
-                                 }
+                                 "version" :version}
                         :shorts{\b "bidirectional"
                                 \d "directed"
                                 \p "pairs"
@@ -149,8 +147,7 @@ Return value -1 means the given graph was empty.
                                 \A "all"
                                 \f "full"
                                 \r "random"
-                                \h "help"
-                                }
+                                \h "help"}
                         :has-data #{:full :random}
                         } args)
         opt #(get-in ac [:opts %])
@@ -165,15 +162,13 @@ Return value -1 means the given graph was empty.
 
         print-cut? (opt :cut)
         print-cut? (if (opt :cut-edn) :edn print-cut?)
-        print-cut? (if (opt :cut-all) :all print-cut?)
-        ]
+        print-cut? (if (opt :cut-all) :all print-cut?)]
     (cond
      (opt :version) (println (get-version))
      (opt :help) (prn-help)
      (opt :full) (->> (read-string (opt :full)) full-graph (compute-print print-cut?))
      (opt :random) (->> (read-string (opt :random)) rand-graph (compute-print print-cut?))
-     :else (->> (graph-reader) (apply graph-builder) (compute-print print-cut?))
-     )))
+     :else (->> (graph-reader) (apply graph-builder) (compute-print print-cut?)) )))
 
 (defn -main [& args]
   (args-dispatch args)
