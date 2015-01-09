@@ -48,4 +48,21 @@ DFS: stop on saturated, remeber them (it's cut)
 
 "
 
+(defn min-cut [g fm start] ;;vd: visited; c: cur; s: successor
+  (let [rsd (partial residual g fm)
+        scs (partial succs g)
+        ;; uses recursion for dfs stack; simpler...
+        dfs (fn dfs [vd c] (reduce #(if (or (%1 %2) (= 0 (rsd c %2))) ;; already visited or zero residual: ignore
+                                      %1
+                                      (dfs %1 %2)) (conj vd c) (scs c)))
+        vd (dfs #{} start)
+        ]
+    (for [c vd      ;; cut is edges from visited to not visited
+          s (scs c)
+          :when (not (vd s))]
+      [c s])))
+
+
+
+
 
